@@ -43,7 +43,10 @@ do
 done
 lengthdirlist=${#dirlist[@]}
 ## find paired files for a specific file and loop the process until there are no more files to process
-inputfastextentplus_rq=`expr $[inputfastextent+5]` ## in the cast of fast the names are _R1 so three characters
+rqextent=`expr $[ncharactersforparing + 2]`
+
+inputfastextentplus_rq=`expr "$inputfastextent""+""$rqextent"` ## in the cast of fast the names are _R1 so three characters
+
 while [ $lengthdirlist -ne 0 ]
 do  
     ## getting paired file names
@@ -51,6 +54,7 @@ do
     dirlistupt=()
     i=0
     until_r=`expr $[inputfastextentplus_rq*-1]`
+
     refname="${dirlist[$i]:0:until_r}"
     ## selecting pairs
     for a in "${dirlist[@]}"; do
@@ -67,9 +71,11 @@ do
     samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.bam"`)
     samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.sorted.bam"`)
     samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.json"`)
-    echo "${samname[0]} ${samname[1]} ${samname[2]} ${samname[3]}"
+    
+    echo "##   Start mapping for:"
     echo "$genrefpath ${pairedfiles[0]} ${pairedfiles[1]}"
-
+    echo "##   following files will be created:"
+    echo "${samname[0]} ${samname[1]} ${samname[2]} ${samname[3]}"
     # run mapping
     bwa-mem2 mem -t 12 "$genrefpath" "${pairedfiles[0]}" "${pairedfiles[1]}" -M > "${samname[0]}"
     # compress to bam

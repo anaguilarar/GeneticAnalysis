@@ -8,7 +8,13 @@ concatenate_paths() {
    echo $full_path
 }
 
-### configuration
+echo "---- GVCF consolidation ----"
+## read configuration
+. parameters.config
+
+echo "Data will be readed from ""$vcf_path"
+echo "and exported in ""$vcfmergedpath"
+echo "---- ---- ---- ---- ---- ----"
 
 #input path
 inputpathlength=`expr length "$vcf_path"`
