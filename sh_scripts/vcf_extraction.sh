@@ -81,22 +81,24 @@ do
     echo "${pairedfiles[0]}" "$fnreads" "$fnvcf"
     echo "########################################"
 
+    samplename="S_""${vcffile%".sorted.bam"}"
     ##### picard
-    #sringli=`expr $[inputpathlength+1]`
-    #samplename="${a:$sringli:$untilext}"
+    sringli=`expr $[inputpathlength+1]`
+    samplename="${a:$sringli:$untilext}"
     java -jar "$picardpath" AddOrReplaceReadGroups \
-            I="${pairedfiles[0]}" \
-            O="$fnreads" \
-            SORT_ORDER=coordinate RGID=foo RGLB=bar RGPL=illumina \
-            RGSM=Sample1 CREATE_INDEX=True RGPU=unit1
+            -I "${pairedfiles[0]}" \
+            -O "$fnreads" \
+            -SORT_ORDER coordinate -RGID foo -RGLB bar -RGPL illumina \
+            -RGSM "$samplename" -CREATE_INDEX True -RGPU unit1
 
     ##### gatk
-    $gatkpath --java-options "-Xmx4g" HaplotypeCaller \
+    ulimit -c unlimited
+    $gatkpath --java-options "-Xmx16g" HaplotypeCaller \
                 -R "$newrefpathfa" \
                 -I "$fnreads" \
                 -O "$fnvcf" \
                 -ERC GVCF \
-                --native-pair-hmm-threads 16
+                --native-pair-hmm-threads 10
 
     [ -e "$fnreads" ] && rm "$fnreads"
     [ -e "${fnreads%".bam"}"".bai" ] && rm "${fnreads%".bam"}"".bai"
@@ -106,7 +108,6 @@ do
         fni2="${a%".sorted.bam.bai"}"
         if [[ $fni2 != $fnref ]];then
             dirlist+=($a)
-        #else   
         fi
     done
     lengthdirlist=${#dirlist[@]}
