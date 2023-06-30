@@ -1,12 +1,6 @@
 #!/bin/bash
 ## functions
-concatenate_paths() {
-   local base_path=${1}
-   local sub_path=${2}
-   local full_path="${base_path:+$base_path/}$sub_path"
-   full_path=$(realpath ${full_path})
-   echo $full_path
-}
+source ./sh_scripts/utils.sh
 
 echo "---- GVCF consolidation ----"
 ## read configuration
@@ -87,11 +81,11 @@ for (( i=1; i<=$chrn; i++ )); do
    echo "########################################"
    
    ##### gatk
-   gatk-4.4.0.0/gatk-4.4.0.0/gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
+   gatk-4.4.0.0/gatk-4.4.0.0/gatk --java-options "-Xmx16g -Xms4g" GenomicsDBImport \
       $fn  --genomicsdb-workspace-path $vcf_output -L $crh
    
    echo "the vcf will be saved as: $outfile"
-   gatk-4.4.0.0/gatk-4.4.0.0/gatk --java-options "-Xmx4g" GenotypeGVCFs -R $newrefpathfa \
+   gatk-4.4.0.0/gatk-4.4.0.0/gatk --java-options "-Xmx16g" GenotypeGVCFs -R $newrefpathfa \
       -V "gendb://$vcf_output" -O "$outfile"
 
 done

@@ -1,12 +1,7 @@
 #!/bin/bash
 ## functions
-concatenate_paths() {
-   local base_path=${1}
-   local sub_path=${2}
-   local full_path="${base_path:+$base_path/}$sub_path"
-   full_path=$(realpath ${full_path})
-   echo $full_path
-}
+source ./sh_scripts/utils.sh
+
 #
 echo "---- GVCF creation per sample init ----"
 ## read configuration
