@@ -156,6 +156,16 @@ vcftools --vcf outputfile_A01.vcf \
          --max-missing-count 10 -c > outputfile_A01_flt.vcf
 ```
 
+## Merging into a single VCF file
+
+```bash
+java -jar "picard-3.0.0path/picard.jar" MergeVcfs \
+        -I vcftmp/outputfile_A01.vcf \
+        -I vcftmp/outputfile_A02.vcf \
+        -O output_allchromosomes.vcf
+```
+
+
 ## Construction of linkage maps
 
 So far all the steps tat has been appied has been using bash. But the next steps were done in [R](https://www.r-project.org/). 
