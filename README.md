@@ -103,7 +103,7 @@ java -jar "picard-3.0.0path/picard.jar" AddOrReplaceReadGroups \
             CREATE_INDEX=True RGPU=unit1
 
 ```
-The next step was to create a sequence dictionary for the reference genome. This is done by 1) specifying the directory containing the gatk tool and 2) decompressing the gs file and 3) indexing our reference genome using the CreateSequenceDictionary function 4) creating index.
+The next step was to create a sequence dictionary for the reference genome. This is done by 1) specifying the directory containing the gatk tool 2) decompressing the gs file 3) indexing our reference genome using the CreateSequenceDictionary function 4) creating index.
 
 ```bash
 #Decompress the gs file
@@ -112,15 +112,15 @@ gatkpath/gatk CreateSequenceDictionary -R Brara_Chiifu_V3.5.fa
 samtools faidx Brara_Chiifu_V3.5.fa
 ```
 
-Finally, the gvcf file is obtained using the HaplotypeCaller function
+Finally, the gvcf file is obtained using the HaplotypeCaller function. We set Java memory allocation to 16 Gb (-Xmx16g). 
 
 ```bash
-gatkpath/gatk --java-options "-Xmx4g" HaplotypeCaller \
+gatkpath/gatk --java-options "-Xmx16g" HaplotypeCaller \
                 -R Brara_Chiifu_V3.5.fa \
                 -I bamfile_withreads.bam \
                 -O output.g.vcf.gs \
                 -ERC GVCF \ ## Specify file type
-                --native-pair-hmm-threads 16 ## the number of threads 
+                --native-pair-hmm-threads 10 ## the number of threads 
 ```
 
 ## Consolidate GVCFs across samples
@@ -129,7 +129,7 @@ The consolidation of the GVCFS samples was done using the GenomicsDBImport and G
 
 
 ```bash
-gatkpath/gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
+gatkpath/gatk --java-options "-Xmx16g -Xms4g" GenomicsDBImport \
    -V sample1.g.vcf.gs \
    -V sample2.g.vcf.gs \
    -V sample3.g.vcf.gs \
@@ -141,42 +141,69 @@ gatkpath/gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
 gatkpath/gatk --java-options "-Xmx4g" GenotypeGVCFs \
     -R Brara_Chiifu_V3.5.fa  \ 
     -V "gendb://vcf_output_path" \
-    -O outputfile.vcf 
+    -O outputfile_A01.vcf 
 ```
+
+## Filtering
+Once the VCF files were obtained per chromosome, the next step was to remove low quality indels, markers with more than N missing SNPs, SNPs with more than two alleles. To accopmlish this, we employed [Vcftools](https://vcftools.sourceforge.net/)
+
+```bash
+vcftools --vcf outputfile_A01.vcf \
+         --recode --remove-indels \
+         --maf 0.05 --min-meanDP 10.0 \
+         --max-meanDP 50000.0 --minQ 30.0 \
+         --min-alleles 2 --max-alleles 2 \
+         --max-missing-count 10 -c > outputfile_A01_flt.vcf
+```
+
+## Construction of linkage maps
+
+So far all the steps tat has been appied has been using bash. But the next steps were done in [R](https://www.r-project.org/). 
 
 # How to use bash scritps
 
 The first thing to do is to change the configuration parameters file "parameters.config". These parameters indicate which directory path contains the fastq files, as well as the output directory names. Each parameter is explained below.
 
-Reference genome
-- genome_reference_name: genome reference file name
-- genome_reference_path: path in which the genome reference is located
-- genome_url: if the genome reference is not on your local computer, which link can be used to download the data. If you have the data, leave it as "".
+`Reference genome`
+- *genome_reference_name*: genome reference file name
+- *genome_reference_path*: path in which the genome reference is located
+- *genome_url*: if the genome reference is not on your local computer, which link can be used to download the data. If you have the data, leave it as "".
 
-Quality parameters:
-- rawfastqpath: input path containing the raw fastq files
-- fastpqualitypath: folder to use for exporting quality files.
-- fastpqualityreportpath: Folder to use for exporting quality report files.
-- fastqextension: extension for fastq files. E.g. ".fq.gz".
+`Quality parameters`
+- *rawfastqpath*: input path containing the raw fastq files
+- *fastpqualitypath*: folder to use for exporting quality files.
+- *fastpqualityreportpath*: Folder to use for exporting quality report files.
+- *fastqextension*: extension for fastq files. E.g. ".fq.gz".
 - ncharactersforparing: Length of the pairing string, e.g. "_R1" is three characters.
 
-Mapping parameters:
-- mappingpath: folder used to export bam and bam.bai files
-- mappingreportpath: folder used to export mapping report files
+`Mapping parameters`
+- *mappingpath*: folder used to export bam and bam.bai files
+- *mappingreportpath*: folder used to export mapping report files
 
-GVCF parameters:
-- gatkpath: path specifying the location of the gatk tool
-- picardpath: path specifying the location of the picard tool
-- vcf_path: folder used to export g.vcf.gs files
+`GVCF parameters`
+- *gatkpath*: path specifying the location of the gatk tool
+- *picardpath*: path specifying the location of the picard tool
+- *vcf_path*: folder used to export g.vcf.gs files
 
-VCF merge parameters:
-- vcfmergedpath: folder to use for exporting vcf files
-- chrn: total number of chromosomes
-- chrsuffix: name used to identify the chromosome
+`VCF merge parameters`
+- *vcfmergedpath*: folder to use for exporting vcf files
+- *chrn*: total number of chromosomes
+- *chrsuffix*: name used to identify the chromosome
 
 Once the parameters has been changed, you can run each bash file, usin bash "bash script.sh". For example for aulity check
 
 
 ```bash
 bash sh_scripts/quality_check.sh
+```
+
+### Outputs
+Inside of each output dir there will be the follogin files
+```
+├── quality_results
+│  ├── ril_1_1_q.fastq
+│  ├── ril_1_1_q.fastq
+├── quality_reports
+│  ├── ril_1.html
+│  ├── ril_1.json
 ```
