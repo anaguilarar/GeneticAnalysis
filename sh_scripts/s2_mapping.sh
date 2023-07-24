@@ -1,12 +1,7 @@
 #!/bin/bash
 ## functions
-concatenate_paths() {
-   local base_path=${1}
-   local sub_path=${2}
-   local full_path="${base_path:+$base_path/}$sub_path"
-   full_path=$(realpath ${full_path})
-   echo $full_path
-}
+source ./sh_scripts/utils.sh
+
 #
 echo "---- Mapping init ----"
 ## read configuration
@@ -19,6 +14,7 @@ echo "---- ---- ---- ---- ---- ----"
 inputpathlength=`expr length "$fastpqualitypath"`
 inputfastextent=`expr length "$fastqextention"`
 untilext=`expr $[inputfastextent*-1]`
+
 ## output paths check if exists otherwise create
 [ ! -d "$mappingpath" ] &&  `mkdir "$mappingpath"`
 [ ! -d "$mappingreportpath" ] &&  `mkdir "$mappingreportpath"`
@@ -70,7 +66,7 @@ do
     samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.sam"`)
     samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.bam"`)
     samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.sorted.bam"`)
-    samname+=(`concatenate_paths "$mappingpath" "${refname:inputpathlength}.json"`)
+    samname+=(`concatenate_paths "$mappingreportpath" "${refname:inputpathlength}.json"`)
     
     echo "##   Start mapping for:"
     echo "$genrefpath ${pairedfiles[0]} ${pairedfiles[1]}"
@@ -79,7 +75,9 @@ do
     # run mapping
     bwa-mem2 mem -t 12 "$genrefpath" "${pairedfiles[0]}" "${pairedfiles[1]}" -M > "${samname[0]}"
     # compress to bam
-    samtools view -b "${samname[0]}" > "${samname[1]}"
+    samtools view -F 260 -b "${samname[0]}" > "${samname[1]}"
+    # remove duplicates
+    #samtools rmdup -s "${samname[1]}" "${samname[1]}"
     # sort and get index
     samtools sort -o "${samname[2]}" "${samname[1]}"
     samtools index "${samname[2]}"

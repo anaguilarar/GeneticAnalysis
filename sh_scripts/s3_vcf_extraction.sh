@@ -77,9 +77,11 @@ do
     echo "########################################"
 
     samplename="S_""${vcffile%".sorted.bam"}"
+    echo $samplename " sample name"
     ##### picard
     sringli=`expr $[inputpathlength+1]`
-    samplename="${a:$sringli:$untilext}"
+    #samplename="${a:$sringli:$untilext}"
+    #echo $samplename " second"
     java -jar "$picardpath" AddOrReplaceReadGroups \
             -I "${pairedfiles[0]}" \
             -O "$fnreads" \
